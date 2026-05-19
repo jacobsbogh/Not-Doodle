@@ -70,6 +70,7 @@ export function BookPollForm({ meeting, onDone }: BookPollFormProps) {
         authors: book.author_name?.slice(0, 3) ?? [],
         firstPublishYear: book.first_publish_year,
         coverId: book.cover_i,
+        coverUrl: coverUrl(book.cover_i),
         openLibraryKey: book.key,
       },
     ]);
@@ -191,7 +192,7 @@ export function BookPollForm({ meeting, onDone }: BookPollFormProps) {
                   )
                 }
               >
-                {book.coverId && <img alt="" src={coverUrl(book.coverId)} />}
+                {book.coverUrl && <img alt="" src={book.coverUrl} />}
                 <span>{book.label}</span>
                 <X size={15} />
               </button>

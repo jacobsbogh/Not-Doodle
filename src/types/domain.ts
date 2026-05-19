@@ -16,6 +16,7 @@ export type PollOption = {
   authors?: string[];
   firstPublishYear?: number;
   coverId?: number;
+  coverUrl?: string;
 };
 
 export type Poll = {

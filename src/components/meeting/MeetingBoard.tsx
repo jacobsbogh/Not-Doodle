@@ -143,13 +143,17 @@ function DecisionSection({
     const nextVotes = selectedVotes.includes(optionId)
       ? selectedVotes.filter((id) => id !== optionId)
       : [...selectedVotes, optionId];
+    const nextVoteMap = {
+      ...votes,
+      [selectedMember.id]: nextVotes,
+    };
 
     await setDoc(
       nextMeetingDoc(),
       {
         title: "Next book club",
         status: "open",
-        [`${votesField}.${selectedMember.id}`]: nextVotes,
+        [votesField]: nextVoteMap,
         updatedAt: serverTimestamp(),
       },
       { merge: true },
@@ -219,12 +223,11 @@ function DecisionSection({
                     disabled={!selectedMember}
                     onClick={() => toggleVote(option.id)}
                   >
-                    {option.coverId && (
-                      <img
-                        className="cover"
-                        alt=""
-                        loading="lazy"
-                        src={coverUrl(option.coverId)}
+                    {kind === "book" && (
+                      <BookCover
+                        coverId={option.coverId}
+                        src={option.coverUrl}
+                        title={option.label}
                       />
                     )}
                     {kind === "date" && option.startsAt && (
@@ -317,5 +320,36 @@ function DecisionSection({
         </span>
       </footer>
     </article>
+  );
+}
+
+function BookCover({
+  coverId,
+  src,
+  title,
+}: {
+  coverId?: number;
+  src?: string;
+  title: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const imageSrc = !failed ? src ?? coverUrl(coverId) : undefined;
+
+  if (!imageSrc) {
+    return (
+      <span className="cover cover-placeholder" aria-label={`No cover for ${title}`}>
+        <BookOpen size={24} />
+      </span>
+    );
+  }
+
+  return (
+    <img
+      className="cover"
+      alt=""
+      loading="lazy"
+      src={imageSrc}
+      onError={() => setFailed(true)}
+    />
   );
 }
