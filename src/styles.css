@@ -1379,26 +1379,80 @@ pre {
 @media (max-width: 780px) {
   body {
     background:
-      linear-gradient(180deg, #0d0d10 0, #0d0d10 220px, transparent 220px),
+      linear-gradient(180deg, #0d0d10 0, #0d0d10 172px, transparent 172px),
       #f6f7fb;
   }
 
   .app-shell {
-    width: min(100% - 20px, 1080px);
-    padding-top: 18px;
+    width: min(100% - 16px, 1080px);
+    padding-top: 14px;
   }
 
-  .hero,
   .poll-footer,
-  .composer-head,
-  .brand-lockup,
-  .hero-actions {
+  .composer-head {
     align-items: stretch;
     flex-direction: column;
   }
 
+  .hero {
+    align-items: center;
+    gap: 10px;
+    min-height: auto;
+    padding: 0 0 12px;
+  }
+
+  .brand-lockup {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .brand-lockup .eyebrow {
+    margin: 0;
+    font-size: 0.78rem;
+  }
+
+  .hero-actions {
+    align-items: center;
+    gap: 6px;
+  }
+
+  .admin-trigger,
+  .hero .ghost {
+    min-height: 38px;
+    padding: 8px 10px;
+    font-size: 0.84rem;
+  }
+
+  .signout-button {
+    width: 40px;
+    padding: 0;
+    font-size: 0;
+    gap: 0;
+  }
+
+  .signout-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .admin-popover {
+    position: fixed;
+    top: 60px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+  }
+
   .toolbar {
-    margin-top: -20px;
+    gap: 10px;
+    margin-top: -8px;
+    margin-bottom: 10px;
+    padding: 10px;
   }
 
   .toolbar,
@@ -1414,6 +1468,53 @@ pre {
     grid-template-columns: 1fr;
   }
 
+  .panel,
+  .empty-state,
+  .composer,
+  .poll-card,
+  .decision-card,
+  .meeting-summary {
+    padding: 16px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+    min-width: 104px;
+    min-height: 42px;
+    padding-inline: 10px;
+  }
+
+  .meeting-summary {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .meeting-summary h2 {
+    font-size: 2rem;
+  }
+
+  .summary-counts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .summary-counts span {
+    padding: 7px 6px;
+    text-align: center;
+  }
+
   .time-preset-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1423,13 +1524,83 @@ pre {
     grid-template-columns: 1fr 1fr;
   }
 
-  .tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .decision-card {
+    gap: 14px;
+  }
+
+  .poll-head {
+    gap: 10px;
+  }
+
+  .badge {
+    padding: 6px 8px;
+    white-space: nowrap;
+  }
+
+  .poll-meta {
+    gap: 6px;
+  }
+
+  .poll-meta-pill {
+    height: 32px;
+    padding-inline: 8px;
+  }
+
+  .time-day-card {
+    padding: 10px;
+  }
+
+  .time-slot-grid {
+    grid-template-columns: repeat(auto-fill, minmax(126px, 160px));
+  }
+
+  .time-slot-vote {
+    min-height: 64px;
+    padding: 9px;
+  }
+
+  .time-slot-time {
+    font-size: 1.08rem;
   }
 
   .vote-option {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .book-options {
+    grid-template-columns: 1fr;
+  }
+
+  .book-options .vote-option {
+    display: grid;
+    grid-template-columns: 62px minmax(0, 1fr);
+    align-items: start;
+    min-height: auto;
+  }
+
+  .book-options .cover,
+  .book-options .cover-placeholder {
+    width: 58px;
+    height: 86px;
+  }
+
+  .book-options .vote-state {
+    grid-column: 2;
+    justify-self: start;
+    margin-left: 0;
+  }
+
+  .option-actions {
+    min-height: 38px;
+  }
+
+  .book-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .book-result {
+    min-height: 120px;
   }
 
   .date-tile {
@@ -1453,6 +1624,42 @@ pre {
     justify-self: start;
   }
 
+  .date-picker-card {
+    padding: 8px;
+  }
+
+  .date-picker-card .rdp-root {
+    --rdp-day_button-height: 30px;
+    --rdp-day_button-width: 30px;
+    --rdp-day-height: 32px;
+    --rdp-day-width: 32px;
+    --rdp-nav_button-height: 32px;
+    --rdp-nav_button-width: 32px;
+    font-size: 0.82rem;
+  }
+
+  .date-picker-card .rdp-dropdowns {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .schedule-panel,
+  .slot-preview,
+  .shortlist,
+  .manual-book {
+    padding: 12px;
+  }
+
+  .slot-pill-grid {
+    grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+  }
+
+  .section-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
   .modal-actions,
   .admin-action-row {
     align-items: stretch;
@@ -1461,10 +1668,5 @@ pre {
 
   .admin-action-row span {
     margin-right: 0;
-  }
-
-  .admin-popover {
-    left: 0;
-    right: auto;
   }
 }

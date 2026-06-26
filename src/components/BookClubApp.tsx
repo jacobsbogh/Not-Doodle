@@ -72,7 +72,8 @@ export function BookClubApp() {
             onUnlock={unlockAdmin}
           />
           <button
-            className="ghost"
+            aria-label="Sign out"
+            className="ghost signout-button"
             type="button"
             onClick={() => signOut(getAuthInstance())}
           >
