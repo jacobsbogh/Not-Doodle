@@ -5,6 +5,7 @@ import { useCollectionData } from "../hooks/useCollectionData";
 import { useNextMeeting } from "../hooks/useNextMeeting";
 import { getAuthInstance } from "../lib/firebaseData";
 import type { Member, View } from "../types/domain";
+import { AdminUnlockPanel } from "./AdminUnlockPanel";
 import { BookPollForm } from "./forms/BookPollForm";
 import { DatePollForm } from "./forms/DatePollForm";
 import { MemberManager } from "./forms/MemberManager";
@@ -16,6 +17,9 @@ export function BookClubApp() {
   const [view, setView] = useState<View>("meeting");
   const [selectedMemberId, setSelectedMemberId] = useState(
     localStorage.getItem("bookClubMemberId") ?? "",
+  );
+  const [adminUnlocked, setAdminUnlocked] = useState(
+    sessionStorage.getItem("notDoodleAdminUnlocked") === "true",
   );
   const {
     items: members,
@@ -34,6 +38,8 @@ export function BookClubApp() {
   const selectedMember = activeMembers.find(
     (member) => member.id === selectedMemberId,
   );
+  const selectedMemberIsUnlockedAdmin =
+    selectedMember?.admin === true && adminUnlocked;
 
   useEffect(() => {
     if (selectedMemberId) {
@@ -118,6 +124,21 @@ export function BookClubApp() {
         </div>
       </section>
 
+      {selectedMember?.admin && !adminUnlocked && (
+        <section className="panel admin-panel">
+          <div>
+            <p className="eyebrow">Admin tools locked</p>
+            <h2>{selectedMember.name} is an admin</h2>
+          </div>
+          <AdminUnlockPanel
+            onUnlock={() => {
+              sessionStorage.setItem("notDoodleAdminUnlocked", "true");
+              setAdminUnlocked(true);
+            }}
+          />
+        </section>
+      )}
+
       {view === "meeting" && (
         <MeetingBoard
           loading={meetingLoading || membersLoading}
@@ -125,7 +146,7 @@ export function BookClubApp() {
           meeting={meeting}
           members={activeMembers}
           selectedMember={selectedMember}
-          isAdmin={selectedMember?.admin === true}
+          isAdmin={selectedMemberIsUnlockedAdmin}
         />
       )}
       {view === "date" && (
@@ -135,7 +156,15 @@ export function BookClubApp() {
         <BookPollForm meeting={meeting} onDone={() => setView("meeting")} />
       )}
       {view === "members" && (
-        <MemberManager members={members} onPick={setSelectedMemberId} />
+        <MemberManager
+          adminUnlocked={adminUnlocked}
+          members={members}
+          onPick={setSelectedMemberId}
+          onUnlockAdmin={() => {
+            sessionStorage.setItem("notDoodleAdminUnlocked", "true");
+            setAdminUnlocked(true);
+          }}
+        />
       )}
     </Shell>
   );

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "hash:admin": "node scripts/hash-admin-password.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

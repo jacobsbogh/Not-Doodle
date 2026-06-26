@@ -3,13 +3,21 @@ import { addDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Shield, ShieldOff, Plus, X } from "lucide-react";
 import { getDb, membersCollection } from "../../lib/firebaseData";
 import type { Member } from "../../types/domain";
+import { AdminUnlockPanel } from "../AdminUnlockPanel";
 
 type MemberManagerProps = {
+  adminUnlocked: boolean;
   members: Member[];
   onPick: (id: string) => void;
+  onUnlockAdmin: () => void;
 };
 
-export function MemberManager({ members, onPick }: MemberManagerProps) {
+export function MemberManager({
+  adminUnlocked,
+  members,
+  onPick,
+  onUnlockAdmin,
+}: MemberManagerProps) {
   const [name, setName] = useState("");
   const activeMembers = members.filter((member) => member.active !== false);
   const inactiveMembers = members.filter((member) => member.active === false);
@@ -46,6 +54,10 @@ export function MemberManager({ members, onPick }: MemberManagerProps) {
   }
 
   async function deactivate(member: Member) {
+    if (!adminUnlocked) {
+      return;
+    }
+
     await updateDoc(doc(getDb(), "members", member.id), {
       active: false,
       updatedAt: serverTimestamp(),
@@ -53,6 +65,10 @@ export function MemberManager({ members, onPick }: MemberManagerProps) {
   }
 
   async function toggleAdmin(member: Member) {
+    if (!adminUnlocked) {
+      return;
+    }
+
     await updateDoc(doc(getDb(), "members", member.id), {
       admin: !member.admin,
       updatedAt: serverTimestamp(),
@@ -78,6 +94,16 @@ export function MemberManager({ members, onPick }: MemberManagerProps) {
         </button>
       </form>
 
+      {!adminUnlocked && (
+        <div className="admin-panel inline-admin-panel">
+          <div>
+            <p className="eyebrow">Protected roles</p>
+            <h2>Unlock admin changes</h2>
+          </div>
+          <AdminUnlockPanel onUnlock={onUnlockAdmin} />
+        </div>
+      )}
+
       <div className="member-list">
         {activeMembers.map((member) => (
           <div className="member-row" key={member.id}>
@@ -85,22 +111,26 @@ export function MemberManager({ members, onPick }: MemberManagerProps) {
               {member.name}
               {member.admin ? <span className="role-pill">Admin</span> : null}
             </button>
-            <button
-              className="icon-button"
-              type="button"
-              title={member.admin ? "Remove admin" : "Make admin"}
-              onClick={() => toggleAdmin(member)}
-            >
-              {member.admin ? <ShieldOff size={17} /> : <Shield size={17} />}
-            </button>
-            <button
-              className="icon-button danger"
-              type="button"
-              title="Remove member"
-              onClick={() => deactivate(member)}
-            >
-              <X size={17} />
-            </button>
+            {adminUnlocked && (
+              <>
+                <button
+                  className="icon-button"
+                  type="button"
+                  title={member.admin ? "Remove admin" : "Make admin"}
+                  onClick={() => toggleAdmin(member)}
+                >
+                  {member.admin ? <ShieldOff size={17} /> : <Shield size={17} />}
+                </button>
+                <button
+                  className="icon-button danger"
+                  type="button"
+                  title="Remove member"
+                  onClick={() => deactivate(member)}
+                >
+                  <X size={17} />
+                </button>
+              </>
+            )}
           </div>
         ))}
       </div>

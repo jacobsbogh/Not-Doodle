@@ -124,6 +124,40 @@ button:disabled {
   padding: 22px;
 }
 
+.admin-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.admin-panel .eyebrow {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.admin-panel h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.inline-admin-panel {
+  margin-bottom: 0;
+}
+
+.admin-unlock {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.admin-unlock .error {
+  grid-column: 1 / -1;
+}
+
 .empty-state {
   display: grid;
   gap: 10px;
@@ -929,6 +963,8 @@ pre {
   .toolbar,
   .overview-grid,
   .meeting-summary,
+  .admin-panel,
+  .admin-unlock,
   .decision-grid,
   .date-builder,
   .search-row,
