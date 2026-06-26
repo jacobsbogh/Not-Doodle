@@ -124,29 +124,6 @@ button:disabled {
   padding: 22px;
 }
 
-.admin-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.admin-panel .eyebrow {
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-size: 0.72rem;
-}
-
-.admin-panel h2 {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.inline-admin-panel {
-  margin-bottom: 0;
-}
-
 .admin-lock-card {
   display: grid;
   gap: 12px;
@@ -158,6 +135,73 @@ button:disabled {
 
 .admin-lock-card .section-title {
   margin-bottom: 0;
+}
+
+.admin-console {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  align-items: center;
+  gap: 16px;
+  margin: -4px 0 16px;
+  border: 1px solid rgba(20, 25, 29, 0.12);
+  border-radius: 3px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.admin-console.unlocked {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: #f4fffc;
+}
+
+.admin-console-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-console-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(91, 92, 246, 0.24);
+  border-radius: 3px;
+  background: #f4f4ff;
+  color: #3730a3;
+}
+
+.admin-console.unlocked .admin-console-icon {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: #d1fae5;
+  color: #047857;
+}
+
+.admin-console .eyebrow {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.admin-console h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.1rem;
+  line-height: 1.1;
+}
+
+.admin-console small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+}
+
+.admin-console .admin-unlock {
+  width: 100%;
+  justify-self: end;
 }
 
 .admin-unlock {
@@ -426,30 +470,6 @@ small {
   color: #991b1b;
   font-size: 0.82rem;
   font-weight: 900;
-}
-
-.admin-strip-unlock {
-  border-color: rgba(91, 92, 246, 0.24);
-  background: #f8f8ff;
-}
-
-.admin-strip-copy {
-  display: grid;
-  gap: 3px;
-}
-
-.admin-strip-copy span {
-  color: var(--ink);
-}
-
-.admin-strip-copy small {
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 760;
-}
-
-.admin-strip-unlock .admin-unlock {
-  min-width: min(100%, 390px);
 }
 
 .decision-grid {
@@ -1210,19 +1230,6 @@ small {
   padding: 6px;
 }
 
-.role-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 8px;
-  border-radius: 3px;
-  background: #eef2ff;
-  color: #3730a3;
-  padding: 3px 6px;
-  font-size: 0.72rem;
-  font-weight: 900;
-}
-
 pre {
   overflow: auto;
   border-radius: 3px;
@@ -1258,7 +1265,7 @@ pre {
   .toolbar,
   .overview-grid,
   .meeting-summary,
-  .admin-panel,
+  .admin-console,
   .admin-unlock,
   .decision-grid,
   .date-builder,

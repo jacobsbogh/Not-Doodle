@@ -5,6 +5,7 @@ import { useCollectionData } from "../hooks/useCollectionData";
 import { useNextMeeting } from "../hooks/useNextMeeting";
 import { getAuthInstance } from "../lib/firebaseData";
 import type { Member, View } from "../types/domain";
+import { AdminToolsPanel } from "./AdminToolsPanel";
 import { BookPollForm } from "./forms/BookPollForm";
 import { DatePollForm } from "./forms/DatePollForm";
 import { MemberManager } from "./forms/MemberManager";
@@ -37,8 +38,6 @@ export function BookClubApp() {
   const selectedMember = activeMembers.find(
     (member) => member.id === selectedMemberId,
   );
-  const selectedMemberIsUnlockedAdmin =
-    selectedMember?.admin === true && adminUnlocked;
 
   useEffect(() => {
     if (selectedMemberId) {
@@ -56,6 +55,11 @@ export function BookClubApp() {
   function unlockAdmin() {
     sessionStorage.setItem("notDoodleAdminUnlocked", "true");
     setAdminUnlocked(true);
+  }
+
+  function lockAdmin() {
+    sessionStorage.removeItem("notDoodleAdminUnlocked");
+    setAdminUnlocked(false);
   }
 
   return (
@@ -128,6 +132,12 @@ export function BookClubApp() {
         </div>
       </section>
 
+      <AdminToolsPanel
+        unlocked={adminUnlocked}
+        onLock={lockAdmin}
+        onUnlock={unlockAdmin}
+      />
+
       {view === "meeting" && (
         <MeetingBoard
           loading={meetingLoading || membersLoading}
@@ -135,9 +145,7 @@ export function BookClubApp() {
           meeting={meeting}
           members={activeMembers}
           selectedMember={selectedMember}
-          isAdmin={selectedMemberIsUnlockedAdmin}
-          adminUnlocked={adminUnlocked}
-          onUnlockAdmin={unlockAdmin}
+          isAdmin={adminUnlocked}
         />
       )}
       {view === "date" && (
@@ -151,7 +159,6 @@ export function BookClubApp() {
           adminUnlocked={adminUnlocked}
           members={members}
           onPick={setSelectedMemberId}
-          onUnlockAdmin={unlockAdmin}
         />
       )}
     </Shell>

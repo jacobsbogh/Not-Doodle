@@ -2,7 +2,6 @@ export type Member = {
   id: string;
   name: string;
   active: boolean;
-  admin?: boolean;
 };
 
 export type PollType = "date" | "book";

@@ -14,7 +14,6 @@ import {
 import { nextMeetingDoc } from "../../lib/firebaseData";
 import { coverUrl, formatDateOnly, formatTimeOnly } from "../../lib/format";
 import type { Meeting, Member, PollOption } from "../../types/domain";
-import { AdminUnlockPanel } from "../AdminUnlockPanel";
 
 type MeetingBoardProps = {
   loading: boolean;
@@ -23,8 +22,6 @@ type MeetingBoardProps = {
   members: Member[];
   selectedMember?: Member;
   isAdmin: boolean;
-  adminUnlocked: boolean;
-  onUnlockAdmin: () => void;
 };
 
 type DecisionKind = "date" | "book";
@@ -76,8 +73,6 @@ export function MeetingBoard({
   members,
   selectedMember,
   isAdmin,
-  adminUnlocked,
-  onUnlockAdmin,
 }: MeetingBoardProps) {
   const activeMeeting = meeting ?? defaultMeeting;
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -131,16 +126,6 @@ export function MeetingBoard({
             <RotateCcw size={16} />
             Reset meeting
           </button>
-        </div>
-      )}
-
-      {selectedMember?.admin && !adminUnlocked && (
-        <div className="admin-strip admin-strip-unlock">
-          <div className="admin-strip-copy">
-            <span>Admin tools locked</span>
-            <small>Unlock to reset the meeting, delete options, or finalize.</small>
-          </div>
-          <AdminUnlockPanel onUnlock={onUnlockAdmin} />
         </div>
       )}
 
