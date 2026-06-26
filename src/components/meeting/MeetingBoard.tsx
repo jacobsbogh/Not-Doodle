@@ -39,6 +39,36 @@ const defaultMeeting: Meeting = {
   bookVotes: {},
 };
 
+type DateOptionGroup = {
+  key: string;
+  label: string;
+  options: PollOption[];
+};
+
+function sortedOptions(options: PollOption[]) {
+  return [...options].sort((a, b) =>
+    (a.startsAt ?? a.label).localeCompare(b.startsAt ?? b.label),
+  );
+}
+
+function groupDateOptions(options: PollOption[]): DateOptionGroup[] {
+  const groups = new Map<string, PollOption[]>();
+
+  sortedOptions(options).forEach((option) => {
+    const key = option.startsAt?.slice(0, 10) ?? "other";
+    groups.set(key, [...(groups.get(key) ?? []), option]);
+  });
+
+  return [...groups.entries()].map(([key, groupOptions]) => ({
+    key,
+    label:
+      key === "other"
+        ? "Other times"
+        : formatDateOnly(groupOptions[0]?.startsAt ?? `${key}T12:00`),
+    options: groupOptions,
+  }));
+}
+
 export function MeetingBoard({
   loading,
   error,
@@ -200,6 +230,8 @@ function DecisionSection({
   const optionField = kind === "date" ? "chosenDateOptionId" : "chosenBookOptionId";
   const votesField = kind === "date" ? "dateVotes" : "bookVotes";
   const optionsField = kind === "date" ? "dateOptions" : "bookOptions";
+  const dateGroups = kind === "date" ? groupDateOptions(options) : [];
+  const resultOptions = kind === "date" ? rankedOptions.slice(0, 6) : rankedOptions;
 
   async function toggleVote(optionId: string) {
     if (!selectedMember) {
@@ -309,72 +341,141 @@ function DecisionSection({
         </div>
       ) : (
         <>
-          <div className={kind === "book" ? "option-grid book-options" : "option-grid"}>
-            {options.map((option) => {
-              const checked = selectedVotes.includes(option.id);
-              const chosen = chosenOptionId === option.id;
+          {kind === "date" ? (
+            <div className="time-board">
+              {dateGroups.map((group) => (
+                <section className="time-day-card" key={group.key}>
+                  <div className="time-day-head">
+                    <strong>{group.label}</strong>
+                    <span>{group.options.length} times</span>
+                  </div>
+                  <div className="time-slot-grid">
+                    {group.options.map((option) => {
+                      const checked = selectedVotes.includes(option.id);
+                      const chosen = chosenOptionId === option.id;
+                      const count = voteCountByOption[option.id] ?? 0;
 
-              return (
-                <div className={chosen ? "option chosen" : "option"} key={option.id}>
-                  <button
-                    className={checked ? "vote-option selected" : "vote-option"}
-                    type="button"
-                    disabled={!selectedMember}
-                    onClick={() => toggleVote(option.id)}
-                  >
-                    {kind === "book" && (
+                      return (
+                        <div
+                          className={[
+                            "time-slot",
+                            checked ? "selected" : "",
+                            chosen ? "chosen" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                          key={option.id}
+                        >
+                          <button
+                            className="time-slot-vote"
+                            type="button"
+                            disabled={!selectedMember}
+                            onClick={() => toggleVote(option.id)}
+                          >
+                            <span className="time-slot-time">
+                              {option.startsAt
+                                ? formatTimeOnly(option.startsAt)
+                                : option.label}
+                            </span>
+                            <span className="time-slot-count">
+                              {count}/{members.length}
+                            </span>
+                            <span className="time-slot-state">
+                              {checked ? (
+                                <CheckCircle2 size={17} />
+                              ) : (
+                                <Plus size={17} />
+                              )}
+                            </span>
+                          </button>
+                          {isAdmin && (
+                            <div className="time-slot-admin">
+                              <button
+                                className="text-action"
+                                type="button"
+                                onClick={() => setFinalizingOptionId(option.id)}
+                              >
+                                Finalize
+                              </button>
+                              <button
+                                className="icon-button danger"
+                                type="button"
+                                title="Delete time"
+                                onClick={() => setDeletingOptionId(option.id)}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div className="option-grid book-options">
+              {options.map((option) => {
+                const checked = selectedVotes.includes(option.id);
+                const chosen = chosenOptionId === option.id;
+
+                return (
+                  <div className={chosen ? "option chosen" : "option"} key={option.id}>
+                    <button
+                      className={checked ? "vote-option selected" : "vote-option"}
+                      type="button"
+                      disabled={!selectedMember}
+                      onClick={() => toggleVote(option.id)}
+                    >
                       <BookCover
                         coverId={option.coverId}
                         src={option.coverUrl}
                         title={option.label}
                       />
-                    )}
-                    {kind === "date" && option.startsAt && (
-                      <span className="date-tile">
-                        <span>{formatDateOnly(option.startsAt)}</span>
-                        <strong>{formatTimeOnly(option.startsAt)}</strong>
+                      <span className="option-copy">
+                        <strong>{option.label}</strong>
+                        {option.authors?.length ? (
+                          <small>{option.authors.join(", ")}</small>
+                        ) : null}
+                        {option.firstPublishYear ? (
+                          <small>{option.firstPublishYear}</small>
+                        ) : null}
                       </span>
-                    )}
-                    <span className="option-copy">
-                      {kind === "book" && <strong>{option.label}</strong>}
-                      {option.authors?.length ? (
-                        <small>{option.authors.join(", ")}</small>
-                      ) : null}
-                      {option.firstPublishYear ? <small>{option.firstPublishYear}</small> : null}
-                    </span>
-                    <span className="vote-state">
-                      {checked ? <CheckCircle2 size={18} /> : <Plus size={18} />}
-                      {checked ? "Selected" : "Select"}
-                    </span>
-                  </button>
-                  <div className="option-actions">
-                    <span>{voteCountByOption[option.id] ?? 0} votes</span>
-                    {isAdmin && (
-                      <button
-                        className="icon-button danger"
-                        type="button"
-                        title="Delete option"
-                        onClick={() => setDeletingOptionId(option.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
+                      <span className="vote-state">
+                        {checked ? <CheckCircle2 size={18} /> : <Plus size={18} />}
+                        {checked ? "Selected" : "Select"}
+                      </span>
+                    </button>
+                    <div className="option-actions">
+                      <span>{voteCountByOption[option.id] ?? 0} votes</span>
+                      {isAdmin && (
+                        <button
+                          className="icon-button danger"
+                          type="button"
+                          title="Delete option"
+                          onClick={() => setDeletingOptionId(option.id)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="results">
             <div className="section-title">
-              <h3>Results</h3>
-              {isAdmin ? (
-                <span>Finalize when the group has decided</span>
-              ) : (
-                <span>Admin finalizes decisions</span>
-              )}
+              <h3>{kind === "date" ? "Best times" : "Results"}</h3>
+              <span>
+                {isAdmin
+                  ? "Finalize when the group has decided"
+                  : "Admin finalizes decisions"}
+              </span>
             </div>
-            {rankedOptions.map((option) => (
+            {resultOptions.map((option) => (
               <div className="result-row" key={option.id}>
                 <span>{option.label}</span>
                 <div className="result-track">
