@@ -1,4 +1,6 @@
-const adminPasswordHash = import.meta.env.VITE_ADMIN_PASSWORD_HASH?.trim().toLowerCase();
+const adminPasswordHash = import.meta.env.VITE_ADMIN_PASSWORD_HASH?.trim();
+const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD?.trim();
+const sha256HashPattern = /^[a-f0-9]{64}$/i;
 
 async function sha256Hex(value: string) {
   const encoded = new TextEncoder().encode(value);
@@ -10,19 +12,35 @@ async function sha256Hex(value: string) {
 }
 
 export async function verifyAdminPassword(password: string) {
-  if (!adminPasswordHash) {
+  if (!adminPasswordHash && !adminPassword) {
     return {
       ok: false,
-      message: "Admin password hash is not configured.",
+      message: "Admin password is not configured for this build.",
+    };
+  }
+
+  if (adminPassword && password === adminPassword) {
+    return {
+      ok: true,
+      message: "",
+    };
+  }
+
+  if (adminPasswordHash && !sha256HashPattern.test(adminPasswordHash)) {
+    return {
+      ok: password === adminPasswordHash,
+      message:
+        password === adminPasswordHash ? "" : "Admin password did not match.",
     };
   }
 
   const candidateHash = await sha256Hex(password);
+  const normalizedHash = adminPasswordHash?.toLowerCase();
 
   return {
-    ok: candidateHash === adminPasswordHash,
+    ok: candidateHash === normalizedHash,
     message:
-      candidateHash === adminPasswordHash
+      candidateHash === normalizedHash
         ? ""
         : "Admin password did not match.",
   };

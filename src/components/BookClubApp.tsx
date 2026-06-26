@@ -5,7 +5,6 @@ import { useCollectionData } from "../hooks/useCollectionData";
 import { useNextMeeting } from "../hooks/useNextMeeting";
 import { getAuthInstance } from "../lib/firebaseData";
 import type { Member, View } from "../types/domain";
-import { AdminUnlockPanel } from "./AdminUnlockPanel";
 import { BookPollForm } from "./forms/BookPollForm";
 import { DatePollForm } from "./forms/DatePollForm";
 import { MemberManager } from "./forms/MemberManager";
@@ -53,6 +52,11 @@ export function BookClubApp() {
       localStorage.removeItem("bookClubMemberId");
     }
   }, [activeMembers.length, selectedMember, selectedMemberId]);
+
+  function unlockAdmin() {
+    sessionStorage.setItem("notDoodleAdminUnlocked", "true");
+    setAdminUnlocked(true);
+  }
 
   return (
     <Shell
@@ -124,21 +128,6 @@ export function BookClubApp() {
         </div>
       </section>
 
-      {selectedMember?.admin && !adminUnlocked && (
-        <section className="panel admin-panel">
-          <div>
-            <p className="eyebrow">Admin tools locked</p>
-            <h2>{selectedMember.name} is an admin</h2>
-          </div>
-          <AdminUnlockPanel
-            onUnlock={() => {
-              sessionStorage.setItem("notDoodleAdminUnlocked", "true");
-              setAdminUnlocked(true);
-            }}
-          />
-        </section>
-      )}
-
       {view === "meeting" && (
         <MeetingBoard
           loading={meetingLoading || membersLoading}
@@ -147,6 +136,8 @@ export function BookClubApp() {
           members={activeMembers}
           selectedMember={selectedMember}
           isAdmin={selectedMemberIsUnlockedAdmin}
+          adminUnlocked={adminUnlocked}
+          onUnlockAdmin={unlockAdmin}
         />
       )}
       {view === "date" && (
@@ -160,10 +151,7 @@ export function BookClubApp() {
           adminUnlocked={adminUnlocked}
           members={members}
           onPick={setSelectedMemberId}
-          onUnlockAdmin={() => {
-            sessionStorage.setItem("notDoodleAdminUnlocked", "true");
-            setAdminUnlocked(true);
-          }}
+          onUnlockAdmin={unlockAdmin}
         />
       )}
     </Shell>

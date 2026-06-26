@@ -95,10 +95,10 @@ export function MemberManager({
       </form>
 
       {!adminUnlocked && (
-        <div className="admin-panel inline-admin-panel">
-          <div>
-            <p className="eyebrow">Protected roles</p>
-            <h2>Unlock admin changes</h2>
+        <div className="admin-lock-card">
+          <div className="section-title">
+            <h3>Admin access</h3>
+            <span>Unlock to change roles or remove people</span>
           </div>
           <AdminUnlockPanel onUnlock={onUnlockAdmin} />
         </div>

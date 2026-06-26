@@ -14,6 +14,7 @@ import {
 import { nextMeetingDoc } from "../../lib/firebaseData";
 import { coverUrl, formatDateOnly, formatTimeOnly } from "../../lib/format";
 import type { Meeting, Member, PollOption } from "../../types/domain";
+import { AdminUnlockPanel } from "../AdminUnlockPanel";
 
 type MeetingBoardProps = {
   loading: boolean;
@@ -22,6 +23,8 @@ type MeetingBoardProps = {
   members: Member[];
   selectedMember?: Member;
   isAdmin: boolean;
+  adminUnlocked: boolean;
+  onUnlockAdmin: () => void;
 };
 
 type DecisionKind = "date" | "book";
@@ -43,17 +46,20 @@ export function MeetingBoard({
   members,
   selectedMember,
   isAdmin,
+  adminUnlocked,
+  onUnlockAdmin,
 }: MeetingBoardProps) {
   const activeMeeting = meeting ?? defaultMeeting;
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   async function resetMeeting() {
     await setDoc(
       nextMeetingDoc(),
       {
-        title: "Next book club",
+        title: activeMeeting.title ?? "Next book club",
         status: "open",
         dateOptions: [],
-        bookOptions: [],
+        bookOptions: activeMeeting.bookOptions ?? [],
         dateVotes: {},
         bookVotes: {},
         chosenDateOptionId: "",
@@ -62,6 +68,7 @@ export function MeetingBoard({
       },
       { merge: true },
     );
+    setResetConfirmOpen(false);
   }
 
   if (error) {
@@ -86,11 +93,37 @@ export function MeetingBoard({
       {isAdmin && (
         <div className="admin-strip">
           <span>Admin tools</span>
-          <button className="ghost compact danger-text" type="button" onClick={resetMeeting}>
+          <button
+            className="ghost compact danger-text"
+            type="button"
+            onClick={() => setResetConfirmOpen(true)}
+          >
             <RotateCcw size={16} />
             Reset meeting
           </button>
         </div>
+      )}
+
+      {selectedMember?.admin && !adminUnlocked && (
+        <div className="admin-strip admin-strip-unlock">
+          <div className="admin-strip-copy">
+            <span>Admin tools locked</span>
+            <small>Unlock to reset the meeting, delete options, or finalize.</small>
+          </div>
+          <AdminUnlockPanel onUnlock={onUnlockAdmin} />
+        </div>
+      )}
+
+      {resetConfirmOpen && (
+        <ConfirmDialog
+          body="This clears meeting times, time votes, book votes, and finalized choices. The current book shortlist stays in place."
+          confirmIcon={<RotateCcw size={17} />}
+          confirmLabel="Reset meeting"
+          title="Reset next meeting?"
+          tone="danger"
+          onCancel={() => setResetConfirmOpen(false)}
+          onConfirm={resetMeeting}
+        />
       )}
 
       <div className="decision-grid">
@@ -368,55 +401,24 @@ function DecisionSection({
       )}
 
       {finalizingOption && (
-        <div className="finalize-panel">
-          <div>
-            <strong>Set as the {kind === "date" ? "meeting time" : "book"}?</strong>
-            <span>{finalizingOption.label}</span>
-          </div>
-          <div className="finalize-actions">
-            <button
-              className="ghost compact"
-              type="button"
-              onClick={() => setFinalizingOptionId("")}
-            >
-              Cancel
-            </button>
-            <button
-              className="primary compact"
-              type="button"
-              onClick={() => chooseOption(finalizingOption.id)}
-            >
-              <Check size={17} />
-              Confirm
-            </button>
-          </div>
-        </div>
+        <ConfirmDialog
+          body={finalizingOption.label}
+          confirmLabel="Confirm"
+          title={`Set as the ${kind === "date" ? "meeting time" : "book"}?`}
+          onCancel={() => setFinalizingOptionId("")}
+          onConfirm={() => chooseOption(finalizingOption.id)}
+        />
       )}
 
       {deletingOption && (
-        <div className="finalize-panel danger-panel">
-          <div>
-            <strong>Delete this {kind === "date" ? "time" : "book"}?</strong>
-            <span>{deletingOption.label}</span>
-          </div>
-          <div className="finalize-actions">
-            <button
-              className="ghost compact"
-              type="button"
-              onClick={() => setDeletingOptionId("")}
-            >
-              Cancel
-            </button>
-            <button
-              className="primary compact danger-button"
-              type="button"
-              onClick={() => deleteOption(deletingOption.id)}
-            >
-              <Trash2 size={17} />
-              Delete
-            </button>
-          </div>
-        </div>
+        <ConfirmDialog
+          body={deletingOption.label}
+          confirmLabel="Delete"
+          title={`Delete this ${kind === "date" ? "time" : "book"}?`}
+          tone="danger"
+          onCancel={() => setDeletingOptionId("")}
+          onConfirm={() => deleteOption(deletingOption.id)}
+        />
       )}
 
       <footer className="poll-footer">
@@ -428,6 +430,54 @@ function DecisionSection({
         </span>
       </footer>
     </article>
+  );
+}
+
+function ConfirmDialog({
+  body,
+  confirmIcon,
+  confirmLabel,
+  title,
+  tone = "default",
+  onCancel,
+  onConfirm,
+}: {
+  body: string;
+  confirmIcon?: ReactNode;
+  confirmLabel: string;
+  title: string;
+  tone?: "default" | "danger";
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section
+        aria-labelledby="confirm-dialog-title"
+        aria-modal="true"
+        className="confirm-modal"
+        role="dialog"
+      >
+        <div>
+          <p className="eyebrow">{tone === "danger" ? "Confirm change" : "Confirm choice"}</p>
+          <h2 id="confirm-dialog-title">{title}</h2>
+          <p>{body}</p>
+        </div>
+        <div className="modal-actions">
+          <button className="ghost" type="button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            className={tone === "danger" ? "primary danger-button" : "primary"}
+            type="button"
+            onClick={onConfirm}
+          >
+            {confirmIcon ?? (tone === "danger" ? <Trash2 size={17} /> : <Check size={17} />)}
+            {confirmLabel}
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 
