@@ -1,6 +1,8 @@
 import { FormEvent, useMemo, useState } from "react";
 import { serverTimestamp, setDoc } from "firebase/firestore";
 import { Calendar, CalendarPlus, Clock, Plus, X } from "lucide-react";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/style.css";
 import { nextMeetingDoc } from "../../lib/firebaseData";
 import {
   formatDateOnly,
@@ -27,6 +29,20 @@ function sortValues(values: string[]) {
   return [...values].sort((a, b) => a.localeCompare(b));
 }
 
+function dateFromKey(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+
+  return new Date(year, month - 1, day);
+}
+
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function timeLabel(time: string) {
   return formatTimeOnly(`2000-01-01T${time}`);
 }
@@ -47,7 +63,6 @@ function groupSlotsByDate(slots: string[]): SlotGroup[] {
 }
 
 export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
-  const [dateValue, setDateValue] = useState("");
   const [dates, setDates] = useState<string[]>([]);
   const [timeValue, setTimeValue] = useState("19:00");
   const [times, setTimes] = useState<string[]>(["19:00"]);
@@ -74,16 +89,21 @@ export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
     () => draftSlots.filter((slot) => !existingStarts.has(slot)),
     [draftSlots, existingStarts],
   );
+  const selectedCalendarDates = useMemo(
+    () => dates.map(dateFromKey),
+    [dates],
+  );
 
-  function addDate(event: FormEvent) {
-    event.preventDefault();
+  function selectDates(selected: Date[] | undefined) {
+    const nextDates = sortValues([
+      ...new Set((selected ?? []).map((date) => dateKey(date))),
+    ]);
+    const selectedDateSet = new Set(nextDates);
 
-    if (!dateValue) {
-      return;
-    }
-
-    setDates((current) => sortValues([...new Set([...current, dateValue])]));
-    setDateValue("");
+    setDates(nextDates);
+    setRemovedSlots((current) =>
+      current.filter((slot) => selectedDateSet.has(slot.slice(0, 10))),
+    );
   }
 
   function removeDate(date: string) {
@@ -184,21 +204,18 @@ export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
             <h3>Days</h3>
             <span>{dates.length} selected</span>
           </div>
-          <form className="compact-adder" onSubmit={addDate}>
-            <label>
-              Date
-              <input
-                type="date"
-                value={dateValue}
-                onChange={(event) => setDateValue(event.target.value)}
-                required
-              />
-            </label>
-            <button className="secondary" type="submit">
-              <Plus size={18} />
-              Add
-            </button>
-          </form>
+          <div className="date-picker-card">
+            <DayPicker
+              captionLayout="dropdown"
+              fixedWeeks
+              mode="multiple"
+              numberOfMonths={1}
+              selected={selectedCalendarDates}
+              showOutsideDays
+              weekStartsOn={1}
+              onSelect={selectDates}
+            />
+          </div>
           <div className="chip-list">
             {dates.map((date) => (
               <button
