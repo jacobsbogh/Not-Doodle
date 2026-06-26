@@ -65,14 +65,21 @@ export function BookClubApp() {
   return (
     <Shell
       action={
-        <button
-          className="ghost"
-          type="button"
-          onClick={() => signOut(getAuthInstance())}
-        >
-          <LogOut size={18} />
-          Sign out
-        </button>
+        <div className="hero-actions">
+          <AdminToolsPanel
+            unlocked={adminUnlocked}
+            onLock={lockAdmin}
+            onUnlock={unlockAdmin}
+          />
+          <button
+            className="ghost"
+            type="button"
+            onClick={() => signOut(getAuthInstance())}
+          >
+            <LogOut size={18} />
+            Sign out
+          </button>
+        </div>
       }
     >
       <section className="toolbar">
@@ -131,12 +138,6 @@ export function BookClubApp() {
           </button>
         </div>
       </section>
-
-      <AdminToolsPanel
-        unlocked={adminUnlocked}
-        onLock={lockAdmin}
-        onUnlock={unlockAdmin}
-      />
 
       {view === "meeting" && (
         <MeetingBoard

@@ -116,10 +116,10 @@ export function MeetingBoard({
       )}
 
       {isAdmin && (
-        <div className="admin-strip">
-          <span>Admin tools</span>
+        <div className="admin-action-row">
+          <span>Admin mode</span>
           <button
-            className="ghost compact danger-text"
+            className="quiet-danger compact"
             type="button"
             onClick={() => setResetConfirmOpen(true)}
           >
