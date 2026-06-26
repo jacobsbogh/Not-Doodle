@@ -46,7 +46,7 @@ export function AdminToolsPanel({
           </div>
 
           {unlocked ? (
-            <button className="ghost compact" type="button" onClick={lock}>
+            <button className="admin-lock-button" type="button" onClick={lock}>
               <LockKeyhole size={16} />
               Lock admin
             </button>

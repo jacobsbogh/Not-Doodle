@@ -215,10 +215,14 @@ button:disabled {
   grid-template-columns: 1fr auto;
 }
 
-.admin-popover .ghost {
-  border-color: var(--line);
-  background: #ffffff;
-  color: var(--ink);
+.admin-lock-button {
+  justify-self: start;
+  min-height: 38px;
+  border: 1px solid rgba(13, 148, 136, 0.3);
+  background: #ecfdf5;
+  color: #047857;
+  padding: 8px 11px;
+  box-shadow: none;
 }
 
 .empty-state {
@@ -684,7 +688,8 @@ small {
 
 .time-slot-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(148px, 204px));
+  justify-content: start;
   gap: 8px;
 }
 
