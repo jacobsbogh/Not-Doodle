@@ -304,14 +304,18 @@ function DecisionSection({
       </div>
 
       <div className="poll-meta">
-        <span>
+        <span className="poll-meta-pill">
           <UserCheck size={16} />
-          {members.length - missingMembers.length}/{members.length} voted
+          <span className="poll-meta-label">
+            {members.length - missingMembers.length}/{members.length} voted
+          </span>
         </span>
         {rankedOptions[0] && (
-          <span>
+          <span className="poll-meta-pill">
             <Trophy size={16} />
-            Leading: {rankedOptions[0].label}
+            <span className="poll-meta-label">
+              Leading: {rankedOptions[0].label}
+            </span>
           </span>
         )}
       </div>
