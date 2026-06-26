@@ -247,6 +247,10 @@ button:disabled {
   box-shadow: none;
 }
 
+.decision-card .compact-empty {
+  align-content: start;
+}
+
 .login-panel,
 .form-stack {
   display: grid;
@@ -490,6 +494,7 @@ small {
 .decision-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: start;
   gap: 14px;
 }
 
@@ -507,6 +512,11 @@ small {
 .decision-card {
   display: grid;
   gap: 18px;
+}
+
+.decision-card {
+  align-content: start;
+  grid-auto-rows: max-content;
 }
 
 .poll-card {
@@ -605,6 +615,7 @@ small {
 .poll-meta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 8px;
 }
 
@@ -612,8 +623,9 @@ small {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  align-self: start;
   min-width: 0;
-  min-height: 34px;
+  height: 34px;
   overflow: hidden;
   border: 1px solid rgba(20, 25, 29, 0.08);
   border-radius: 3px;
