@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { addDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { Plus, X } from "lucide-react";
+import { Shield, ShieldOff, Plus, X } from "lucide-react";
 import { getDb, membersCollection } from "../../lib/firebaseData";
 import type { Member } from "../../types/domain";
 
@@ -52,6 +52,13 @@ export function MemberManager({ members, onPick }: MemberManagerProps) {
     });
   }
 
+  async function toggleAdmin(member: Member) {
+    await updateDoc(doc(getDb(), "members", member.id), {
+      admin: !member.admin,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
   return (
     <section className="panel form-stack">
       <h2>Members</h2>
@@ -76,6 +83,15 @@ export function MemberManager({ members, onPick }: MemberManagerProps) {
           <div className="member-row" key={member.id}>
             <button className="text-button" type="button" onClick={() => onPick(member.id)}>
               {member.name}
+              {member.admin ? <span className="role-pill">Admin</span> : null}
+            </button>
+            <button
+              className="icon-button"
+              type="button"
+              title={member.admin ? "Remove admin" : "Make admin"}
+              onClick={() => toggleAdmin(member)}
+            >
+              {member.admin ? <ShieldOff size={17} /> : <Shield size={17} />}
             </button>
             <button
               className="icon-button danger"

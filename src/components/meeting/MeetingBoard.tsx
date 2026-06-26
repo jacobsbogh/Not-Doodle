@@ -6,6 +6,8 @@ import {
   Check,
   CheckCircle2,
   Plus,
+  RotateCcw,
+  Trash2,
   Trophy,
   UserCheck,
 } from "lucide-react";
@@ -19,6 +21,7 @@ type MeetingBoardProps = {
   meeting: Meeting | null;
   members: Member[];
   selectedMember?: Member;
+  isAdmin: boolean;
 };
 
 type DecisionKind = "date" | "book";
@@ -39,8 +42,27 @@ export function MeetingBoard({
   meeting,
   members,
   selectedMember,
+  isAdmin,
 }: MeetingBoardProps) {
   const activeMeeting = meeting ?? defaultMeeting;
+
+  async function resetMeeting() {
+    await setDoc(
+      nextMeetingDoc(),
+      {
+        title: "Next book club",
+        status: "open",
+        dateOptions: [],
+        bookOptions: [],
+        dateVotes: {},
+        bookVotes: {},
+        chosenDateOptionId: "",
+        chosenBookOptionId: "",
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  }
 
   if (error) {
     return (
@@ -57,38 +79,44 @@ export function MeetingBoard({
 
   return (
     <div className="meeting-stack">
-      <section className="meeting-hero poll-card">
-        <div>
-          <p className="eyebrow">Ongoing decision room</p>
-          <h2>{activeMeeting.title}</h2>
-        </div>
-        <span className="badge">{activeMeeting.status}</span>
-      </section>
-
       {!selectedMember && (
         <p className="notice">Choose your member name before voting.</p>
       )}
 
-      <DecisionSection
-        kind="date"
-        title="Meeting time"
-        icon={<CalendarDays size={18} />}
-        options={activeMeeting.dateOptions ?? []}
-        votes={activeMeeting.dateVotes ?? {}}
-        chosenOptionId={activeMeeting.chosenDateOptionId}
-        members={members}
-        selectedMember={selectedMember}
-      />
-      <DecisionSection
-        kind="book"
-        title="Book shortlist"
-        icon={<BookOpen size={18} />}
-        options={activeMeeting.bookOptions ?? []}
-        votes={activeMeeting.bookVotes ?? {}}
-        chosenOptionId={activeMeeting.chosenBookOptionId}
-        members={members}
-        selectedMember={selectedMember}
-      />
+      {isAdmin && (
+        <div className="admin-strip">
+          <span>Admin tools</span>
+          <button className="ghost compact danger-text" type="button" onClick={resetMeeting}>
+            <RotateCcw size={16} />
+            Reset meeting
+          </button>
+        </div>
+      )}
+
+      <div className="decision-grid">
+        <DecisionSection
+          kind="date"
+          title="Meeting time"
+          icon={<CalendarDays size={18} />}
+          options={activeMeeting.dateOptions ?? []}
+          votes={activeMeeting.dateVotes ?? {}}
+          chosenOptionId={activeMeeting.chosenDateOptionId}
+          members={members}
+          selectedMember={selectedMember}
+          isAdmin={isAdmin}
+        />
+        <DecisionSection
+          kind="book"
+          title="Book shortlist"
+          icon={<BookOpen size={18} />}
+          options={activeMeeting.bookOptions ?? []}
+          votes={activeMeeting.bookVotes ?? {}}
+          chosenOptionId={activeMeeting.chosenBookOptionId}
+          members={members}
+          selectedMember={selectedMember}
+          isAdmin={isAdmin}
+        />
+      </div>
     </div>
   );
 }
@@ -102,6 +130,7 @@ function DecisionSection({
   chosenOptionId,
   members,
   selectedMember,
+  isAdmin,
 }: {
   kind: DecisionKind;
   title: string;
@@ -111,8 +140,10 @@ function DecisionSection({
   chosenOptionId?: string;
   members: Member[];
   selectedMember?: Member;
+  isAdmin: boolean;
 }) {
   const [finalizingOptionId, setFinalizingOptionId] = useState("");
+  const [deletingOptionId, setDeletingOptionId] = useState("");
   const selectedVotes = selectedMember ? votes?.[selectedMember.id] ?? [] : [];
   const voteCountByOption = options.reduce<Record<string, number>>(
     (counts, option) => {
@@ -132,8 +163,10 @@ function DecisionSection({
   const finalizingOption = options.find(
     (option) => option.id === finalizingOptionId,
   );
+  const deletingOption = options.find((option) => option.id === deletingOptionId);
   const optionField = kind === "date" ? "chosenDateOptionId" : "chosenBookOptionId";
   const votesField = kind === "date" ? "dateVotes" : "bookVotes";
+  const optionsField = kind === "date" ? "dateOptions" : "bookOptions";
 
   async function toggleVote(optionId: string) {
     if (!selectedMember) {
@@ -161,6 +194,10 @@ function DecisionSection({
   }
 
   async function chooseOption(optionId: string) {
+    if (!isAdmin) {
+      return;
+    }
+
     await setDoc(
       nextMeetingDoc(),
       {
@@ -174,8 +211,37 @@ function DecisionSection({
     setFinalizingOptionId("");
   }
 
+  async function deleteOption(optionId: string) {
+    if (!isAdmin) {
+      return;
+    }
+
+    const nextOptions = options.filter((option) => option.id !== optionId);
+    const nextVotes = Object.fromEntries(
+      Object.entries(votes).map(([memberId, memberVotes]) => [
+        memberId,
+        memberVotes.filter((id) => id !== optionId),
+      ]),
+    );
+    const clearsChosen = chosenOptionId === optionId;
+
+    await setDoc(
+      nextMeetingDoc(),
+      {
+        title: "Next book club",
+        status: "open",
+        [optionsField]: nextOptions,
+        [votesField]: nextVotes,
+        ...(clearsChosen ? { [optionField]: "" } : {}),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+    setDeletingOptionId("");
+  }
+
   return (
-    <article className="poll-card decision-card">
+    <article className="decision-card">
       <div className="poll-head">
         <div>
           <p className="eyebrow">{kind === "date" ? "Date options" : "Book options"}</p>
@@ -250,6 +316,16 @@ function DecisionSection({
                   </button>
                   <div className="option-actions">
                     <span>{voteCountByOption[option.id] ?? 0} votes</span>
+                    {isAdmin && (
+                      <button
+                        className="icon-button danger"
+                        type="button"
+                        title="Delete option"
+                        onClick={() => setDeletingOptionId(option.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -259,7 +335,11 @@ function DecisionSection({
           <div className="results">
             <div className="section-title">
               <h3>Results</h3>
-              <span>Finalize when the group has decided</span>
+              {isAdmin ? (
+                <span>Finalize when the group has decided</span>
+              ) : (
+                <span>Admin finalizes decisions</span>
+              )}
             </div>
             {rankedOptions.map((option) => (
               <div className="result-row" key={option.id}>
@@ -272,13 +352,15 @@ function DecisionSection({
                   />
                 </div>
                 <strong>{voteCountByOption[option.id] ?? 0}</strong>
-                <button
-                  className="text-action"
-                  type="button"
-                  onClick={() => setFinalizingOptionId(option.id)}
-                >
-                  Finalize
-                </button>
+                {isAdmin && (
+                  <button
+                    className="text-action"
+                    type="button"
+                    onClick={() => setFinalizingOptionId(option.id)}
+                  >
+                    Finalize
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -306,6 +388,32 @@ function DecisionSection({
             >
               <Check size={17} />
               Confirm
+            </button>
+          </div>
+        </div>
+      )}
+
+      {deletingOption && (
+        <div className="finalize-panel danger-panel">
+          <div>
+            <strong>Delete this {kind === "date" ? "time" : "book"}?</strong>
+            <span>{deletingOption.label}</span>
+          </div>
+          <div className="finalize-actions">
+            <button
+              className="ghost compact"
+              type="button"
+              onClick={() => setDeletingOptionId("")}
+            >
+              Cancel
+            </button>
+            <button
+              className="primary compact danger-button"
+              type="button"
+              onClick={() => deleteOption(deletingOption.id)}
+            >
+              <Trash2 size={17} />
+              Delete
             </button>
           </div>
         </div>
