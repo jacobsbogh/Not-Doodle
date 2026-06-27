@@ -42,6 +42,13 @@ type DateOptionGroup = {
   options: PollOption[];
 };
 
+type DecisionSummaryItemProps = {
+  icon: ReactNode;
+  label: string;
+  state: "Finalized" | "Leading" | "Open";
+  value: string;
+};
+
 function sortedOptions(options: PollOption[]) {
   return [...options].sort((a, b) =>
     (a.startsAt ?? a.label).localeCompare(b.startsAt ?? b.label),
@@ -66,6 +73,58 @@ function groupDateOptions(options: PollOption[]): DateOptionGroup[] {
   }));
 }
 
+function rankedByVotes(
+  options: PollOption[],
+  votes: Record<string, string[]>,
+  members: Member[],
+) {
+  return [...options].sort((a, b) => {
+    const aVotes = members.filter((member) => votes?.[member.id]?.includes(a.id))
+      .length;
+    const bVotes = members.filter((member) => votes?.[member.id]?.includes(b.id))
+      .length;
+
+    return bVotes - aVotes;
+  });
+}
+
+function countVotes(
+  optionId: string,
+  votes: Record<string, string[]>,
+  members: Member[],
+) {
+  return members.filter((member) => votes?.[member.id]?.includes(optionId)).length;
+}
+
+function leadingOptions(
+  options: PollOption[],
+  votes: Record<string, string[]>,
+  members: Member[],
+) {
+  const rankedOptions = rankedByVotes(options, votes, members);
+  const topVoteCount = rankedOptions[0]
+    ? countVotes(rankedOptions[0].id, votes, members)
+    : 0;
+
+  if (topVoteCount === 0) {
+    return [];
+  }
+
+  return rankedOptions.filter(
+    (option) => countVotes(option.id, votes, members) === topVoteCount,
+  );
+}
+
+function formatLeadingLabels(options: PollOption[]) {
+  const labels = options.map((option) => option.label);
+
+  if (labels.length <= 2) {
+    return labels.join(" and ");
+  }
+
+  return `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
+}
+
 export function MeetingBoard({
   loading,
   error,
@@ -76,6 +135,22 @@ export function MeetingBoard({
 }: MeetingBoardProps) {
   const activeMeeting = meeting ?? defaultMeeting;
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const chosenDate = activeMeeting.dateOptions.find(
+    (option) => option.id === activeMeeting.chosenDateOptionId,
+  );
+  const chosenBook = activeMeeting.bookOptions.find(
+    (option) => option.id === activeMeeting.chosenBookOptionId,
+  );
+  const leadingDates = leadingOptions(
+    activeMeeting.dateOptions ?? [],
+    activeMeeting.dateVotes ?? {},
+    members,
+  );
+  const leadingBooks = leadingOptions(
+    activeMeeting.bookOptions ?? [],
+    activeMeeting.bookVotes ?? {},
+    members,
+  );
 
   async function resetMeeting() {
     await setDoc(
@@ -141,6 +216,40 @@ export function MeetingBoard({
         />
       )}
 
+      <section className="decision-summary" aria-label="Current decisions">
+        <DecisionSummaryItem
+          icon={<CalendarDays size={18} />}
+          label="Time"
+          state={chosenDate ? "Finalized" : leadingDates.length ? "Leading" : "Open"}
+          value={
+            chosenDate?.label ??
+            (leadingDates.length
+              ? formatLeadingLabels(leadingDates)
+              : "No meeting times yet")
+          }
+        />
+        <DecisionSummaryItem
+          icon={<BookOpen size={18} />}
+          label="Book"
+          state={chosenBook ? "Finalized" : leadingBooks.length ? "Leading" : "Open"}
+          value={
+            chosenBook?.label ??
+            (leadingBooks.length ? formatLeadingLabels(leadingBooks) : "No votes yet")
+          }
+        />
+      </section>
+
+      <section className="mobile-vote-actions" aria-label="Voting shortcuts">
+        <a href="#meeting-times">
+          <CalendarDays size={17} />
+          Vote on times
+        </a>
+        <a href="#book-shortlist">
+          <BookOpen size={17} />
+          Vote on books
+        </a>
+      </section>
+
       <div className="decision-grid">
         <DecisionSection
           kind="date"
@@ -166,6 +275,24 @@ export function MeetingBoard({
         />
       </div>
     </div>
+  );
+}
+
+function DecisionSummaryItem({
+  icon,
+  label,
+  state,
+  value,
+}: DecisionSummaryItemProps) {
+  return (
+    <article className={state === "Finalized" ? "summary-decision done" : "summary-decision"}>
+      <span className="summary-decision-icon">{icon}</span>
+      <div>
+        <p>{label}</p>
+        <strong>{value}</strong>
+      </div>
+      <span className="summary-decision-state">{state}</span>
+    </article>
   );
 }
 
@@ -208,6 +335,15 @@ function DecisionSection({
   const rankedOptions = [...options].sort(
     (a, b) => (voteCountByOption[b.id] ?? 0) - (voteCountByOption[a.id] ?? 0),
   );
+  const topVoteCount = rankedOptions[0]
+    ? voteCountByOption[rankedOptions[0].id] ?? 0
+    : 0;
+  const leadingOptions =
+    topVoteCount > 0
+      ? rankedOptions.filter(
+          (option) => (voteCountByOption[option.id] ?? 0) === topVoteCount,
+        )
+      : [];
   const finalizingOption = options.find(
     (option) => option.id === finalizingOptionId,
   );
@@ -291,7 +427,10 @@ function DecisionSection({
   }
 
   return (
-    <article className="decision-card">
+    <article
+      className="decision-card"
+      id={kind === "date" ? "meeting-times" : "book-shortlist"}
+    >
       <div className="poll-head">
         <div>
           <p className="eyebrow">{kind === "date" ? "Date options" : "Book options"}</p>
@@ -310,23 +449,26 @@ function DecisionSection({
             {members.length - missingMembers.length}/{members.length} voted
           </span>
         </span>
-        {rankedOptions[0] && (
-          <span className="poll-meta-pill">
+        {leadingOptions.length > 0 && (
+          <span className="poll-meta-pill leading-meta">
             <Trophy size={16} />
             <span className="poll-meta-label">
-              Leading: {rankedOptions[0].label}
+              Leading: {formatLeadingLabels(leadingOptions)}
             </span>
           </span>
         )}
       </div>
 
       {options.length === 0 ? (
-        <div className="empty-state compact-empty">
-          <h2>No {kind === "date" ? "meeting times" : "books"} yet</h2>
-          <p>
-            Add {kind === "date" ? "date options" : "book options"} from the tabs
-            above.
-          </p>
+        <div className="empty-state compact-empty decision-empty">
+          <span className="empty-icon">{icon}</span>
+          <div>
+            <h2>No {kind === "date" ? "meeting times" : "books"} yet</h2>
+            <p>
+              Add {kind === "date" ? "time options" : "book options"} from the
+              tabs above.
+            </p>
+          </div>
         </div>
       ) : (
         <>

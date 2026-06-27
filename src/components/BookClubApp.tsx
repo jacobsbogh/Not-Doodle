@@ -62,6 +62,27 @@ export function BookClubApp() {
     setAdminUnlocked(false);
   }
 
+  const appNavigation = (className: string, ariaLabel: string) => (
+    <nav className={className} aria-label={ariaLabel} data-active-view={view}>
+      <Tab active={view === "meeting"} onClick={() => setView("meeting")}>
+        <Vote size={17} />
+        Overview
+      </Tab>
+      <Tab active={view === "date"} onClick={() => setView("date")}>
+        <CalendarPlus size={17} />
+        Times
+      </Tab>
+      <Tab active={view === "book"} onClick={() => setView("book")}>
+        <BookOpen size={17} />
+        Books
+      </Tab>
+      <Tab active={view === "members"} onClick={() => setView("members")}>
+        <Users size={17} />
+        People
+      </Tab>
+    </nav>
+  );
+
   return (
     <Shell
       action={
@@ -98,46 +119,7 @@ export function BookClubApp() {
             ))}
           </select>
         </label>
-        <nav className="tabs" aria-label="App sections">
-          <Tab active={view === "meeting"} onClick={() => setView("meeting")}>
-            <Vote size={17} />
-            Overview
-          </Tab>
-          <Tab active={view === "date"} onClick={() => setView("date")}>
-            <CalendarPlus size={17} />
-            Times
-          </Tab>
-          <Tab active={view === "book"} onClick={() => setView("book")}>
-            <BookOpen size={17} />
-            Books
-          </Tab>
-          <Tab active={view === "members"} onClick={() => setView("members")}>
-            <Users size={17} />
-            People
-          </Tab>
-        </nav>
-      </section>
-
-      <section className="meeting-summary" aria-label="Next meeting summary">
-        <div>
-          <p className="eyebrow">Next meeting</p>
-          <h2>{meeting?.title ?? "Next book club"}</h2>
-        </div>
-        <div className="summary-counts" aria-label="Current options">
-          <span>{meeting?.dateOptions?.length ?? 0} times</span>
-          <span>{meeting?.bookOptions?.length ?? 0} books</span>
-          <span>{activeMembers.length} people</span>
-        </div>
-        <div className="summary-actions">
-          <button className="secondary compact" type="button" onClick={() => setView("date")}>
-            <CalendarPlus size={17} />
-            Add time
-          </button>
-          <button className="primary compact" type="button" onClick={() => setView("book")}>
-            <BookOpen size={17} />
-            Add book
-          </button>
-        </div>
+        {appNavigation("tabs toolbar-tabs", "App sections")}
       </section>
 
       {view === "meeting" && (
@@ -163,6 +145,8 @@ export function BookClubApp() {
           onPick={setSelectedMemberId}
         />
       )}
+
+      {appNavigation("mobile-tabbar", "Primary sections")}
     </Shell>
   );
 }
