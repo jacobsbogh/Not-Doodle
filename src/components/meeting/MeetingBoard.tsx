@@ -34,6 +34,7 @@ const defaultMeeting: Meeting = {
   bookOptions: [],
   dateVotes: {},
   bookVotes: {},
+  defaultTime: "19:00",
 };
 
 type DateOptionGroup = {
@@ -164,6 +165,7 @@ export function MeetingBoard({
         bookVotes: {},
         chosenDateOptionId: "",
         chosenBookOptionId: "",
+        defaultTime: activeMeeting.defaultTime ?? "19:00",
         updatedAt: serverTimestamp(),
       },
       { merge: true },

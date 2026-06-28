@@ -106,7 +106,7 @@ export function BookClubApp() {
     >
       <section className="toolbar">
         <label className="member-select">
-          Voting as
+          <span>Voting as</span>
           <select
             value={selectedMemberId}
             onChange={(event) => setSelectedMemberId(event.target.value)}
@@ -133,7 +133,11 @@ export function BookClubApp() {
         />
       )}
       {view === "date" && (
-        <DatePollForm meeting={meeting} onDone={() => setView("meeting")} />
+        <DatePollForm
+          isAdmin={adminUnlocked}
+          meeting={meeting}
+          onDone={() => setView("meeting")}
+        />
       )}
       {view === "book" && (
         <BookPollForm meeting={meeting} onDone={() => setView("meeting")} />

@@ -39,6 +39,7 @@ export type Meeting = {
   bookVotes: Record<string, string[]>;
   chosenDateOptionId?: string;
   chosenBookOptionId?: string;
+  defaultTime?: string;
 };
 
 export type BookResult = {

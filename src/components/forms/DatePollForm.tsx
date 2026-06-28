@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { serverTimestamp, setDoc } from "firebase/firestore";
 import { Calendar, CalendarPlus, Clock, Plus, X } from "lucide-react";
 import { DayPicker } from "react-day-picker";
@@ -13,6 +13,7 @@ import {
 import type { Meeting } from "../../types/domain";
 
 type DatePollFormProps = {
+  isAdmin: boolean;
   meeting: Meeting | null;
   onDone: () => void;
 };
@@ -24,6 +25,7 @@ type SlotGroup = {
 };
 
 const suggestedTimes = ["18:00", "18:30", "19:00", "19:30", "20:00", "20:30"];
+const fallbackDefaultTime = "19:00";
 
 function sortValues(values: string[]) {
   return [...values].sort((a, b) => a.localeCompare(b));
@@ -62,12 +64,20 @@ function groupSlotsByDate(slots: string[]): SlotGroup[] {
   }));
 }
 
-export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
+export function DatePollForm({
+  isAdmin,
+  meeting,
+  onDone,
+}: DatePollFormProps) {
+  const meetingDefaultTime = meeting?.defaultTime ?? fallbackDefaultTime;
   const [dates, setDates] = useState<string[]>([]);
-  const [timeValue, setTimeValue] = useState("19:00");
-  const [times, setTimes] = useState<string[]>(["19:00"]);
+  const [timeValue, setTimeValue] = useState(meetingDefaultTime);
+  const [times, setTimes] = useState<string[]>([meetingDefaultTime]);
+  const [defaultTimeValue, setDefaultTimeValue] = useState(meetingDefaultTime);
+  const [appliedDefaultTime, setAppliedDefaultTime] = useState(meetingDefaultTime);
   const [removedSlots, setRemovedSlots] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [savingDefaultTime, setSavingDefaultTime] = useState(false);
   const existingOptions = meeting?.dateOptions ?? [];
   const existingStarts = useMemo(
     () =>
@@ -93,6 +103,21 @@ export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
     () => dates.map(dateFromKey),
     [dates],
   );
+
+  useEffect(() => {
+    if (meetingDefaultTime === appliedDefaultTime) {
+      return;
+    }
+
+    setDefaultTimeValue(meetingDefaultTime);
+    setTimeValue(meetingDefaultTime);
+    setTimes((current) =>
+      current.length === 1 && current[0] === appliedDefaultTime
+        ? [meetingDefaultTime]
+        : current,
+    );
+    setAppliedDefaultTime(meetingDefaultTime);
+  }, [appliedDefaultTime, meetingDefaultTime]);
 
   function selectDates(selected: Date[] | undefined) {
     const nextDates = sortValues([
@@ -144,6 +169,43 @@ export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
     );
   }
 
+  async function saveDefaultTime(event: FormEvent) {
+    event.preventDefault();
+
+    if (!isAdmin || !defaultTimeValue) {
+      return;
+    }
+
+    const previousDefaultTime = appliedDefaultTime;
+    setSavingDefaultTime(true);
+    await setDoc(
+      nextMeetingDoc(),
+      {
+        title: meeting?.title ?? "Next book club",
+        status: meeting?.status ?? "open",
+        dateOptions: meeting?.dateOptions ?? [],
+        bookOptions: meeting?.bookOptions ?? [],
+        dateVotes: meeting?.dateVotes ?? {},
+        bookVotes: meeting?.bookVotes ?? {},
+        chosenDateOptionId: meeting?.chosenDateOptionId ?? "",
+        chosenBookOptionId: meeting?.chosenBookOptionId ?? "",
+        defaultTime: defaultTimeValue,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+    setAppliedDefaultTime(defaultTimeValue);
+    setTimeValue(defaultTimeValue);
+    setTimes((current) =>
+      current.length === 1 && current[0] === previousDefaultTime
+        ? [defaultTimeValue]
+        : current.includes(defaultTimeValue)
+        ? current
+        : sortValues([...current, defaultTimeValue]),
+    );
+    setSavingDefaultTime(false);
+  }
+
   async function addToMeeting(event: FormEvent) {
     event.preventDefault();
     const newOptions = slotsToAdd
@@ -176,6 +238,7 @@ export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
         bookVotes: meeting?.bookVotes ?? {},
         chosenDateOptionId: meeting?.chosenDateOptionId ?? "",
         chosenBookOptionId: meeting?.chosenBookOptionId ?? "",
+        defaultTime: meetingDefaultTime,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         status: "open",
@@ -197,6 +260,22 @@ export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
           Cancel
         </button>
       </div>
+
+      <form className="composer-action" onSubmit={addToMeeting}>
+        <span>
+          {slotsToAdd.length > 0
+            ? `${slotsToAdd.length} new / ${draftSlots.length} total`
+            : "Pick days and times to add"}
+        </span>
+        <button
+          className="primary"
+          type="submit"
+          disabled={busy || slotsToAdd.length === 0}
+        >
+          <CalendarPlus size={18} />
+          Add {slotsToAdd.length} new times
+        </button>
+      </form>
 
       <div className="schedule-builder">
         <section className="schedule-panel">
@@ -237,6 +316,30 @@ export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
             <h3>Times</h3>
             <span>{times.length} selected</span>
           </div>
+          {isAdmin && (
+            <form className="default-time-control" onSubmit={saveDefaultTime}>
+              <label>
+                Default time
+                <input
+                  step="900"
+                  type="time"
+                  value={defaultTimeValue}
+                  onChange={(event) => setDefaultTimeValue(event.target.value)}
+                  required
+                />
+              </label>
+              <button
+                className="secondary"
+                type="submit"
+                disabled={
+                  savingDefaultTime || defaultTimeValue === meetingDefaultTime
+                }
+              >
+                <Clock size={18} />
+                Save
+              </button>
+            </form>
+          )}
           <div className="time-preset-grid">
             {suggestedTimes.map((time) => (
               <button
@@ -334,16 +437,6 @@ export function DatePollForm({ meeting, onDone }: DatePollFormProps) {
         )}
       </section>
 
-      <form onSubmit={addToMeeting}>
-        <button
-          className="primary wide"
-          type="submit"
-          disabled={busy || slotsToAdd.length === 0}
-        >
-          <CalendarPlus size={18} />
-          Add {slotsToAdd.length} new times to next meeting
-        </button>
-      </form>
     </section>
   );
 }

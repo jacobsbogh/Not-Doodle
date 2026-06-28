@@ -156,6 +156,22 @@ export function BookPollForm({ meeting, onDone }: BookPollFormProps) {
         </button>
       </div>
 
+      <form className="composer-action" onSubmit={addToMeeting}>
+        <span>
+          {selected.length > 0
+            ? `${selected.length} selected`
+            : "Select books to add"}
+        </span>
+        <button
+          className="primary"
+          type="submit"
+          disabled={busy || selected.length === 0}
+        >
+          <BookOpen size={18} />
+          Add {selected.length} books
+        </button>
+      </form>
+
       <form className="search-row elevated-search" onSubmit={searchBooks}>
         <label>
           Search Open Library
@@ -287,12 +303,6 @@ export function BookPollForm({ meeting, onDone }: BookPollFormProps) {
         </button>
       </form>
 
-      <form onSubmit={addToMeeting}>
-        <button className="primary wide" type="submit" disabled={busy || selected.length === 0}>
-          <BookOpen size={18} />
-          Add {selected.length} books to next meeting
-        </button>
-      </form>
     </section>
   );
 }
