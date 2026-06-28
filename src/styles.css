@@ -528,30 +528,14 @@ small {
   color: #047857;
 }
 
-.admin-action-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+.summary-admin-action {
+  justify-self: end;
   min-height: 40px;
-  border: 1px solid rgba(20, 25, 29, 0.08);
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.72);
-  padding: 6px;
-}
-
-.admin-action-row span {
-  margin-right: auto;
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.quiet-danger {
   border: 1px solid rgba(153, 27, 27, 0.18);
   background: #fff7f7;
   color: #991b1b;
+  padding: 8px 10px;
+  box-shadow: none;
 }
 
 .decision-grid {
@@ -1904,6 +1888,11 @@ pre {
     right: 14px;
   }
 
+  .summary-admin-action {
+    width: 100%;
+    min-height: 38px;
+  }
+
   .poll-head {
     gap: 10px;
   }
@@ -2119,14 +2108,9 @@ pre {
     gap: 4px;
   }
 
-  .modal-actions,
-  .admin-action-row {
+  .modal-actions {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .admin-action-row span {
-    margin-right: 0;
   }
 
   .decision-empty {

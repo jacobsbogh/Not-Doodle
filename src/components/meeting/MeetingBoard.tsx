@@ -192,20 +192,6 @@ export function MeetingBoard({
         <p className="notice">Choose your member name before voting.</p>
       )}
 
-      {isAdmin && (
-        <div className="admin-action-row">
-          <span>Admin mode</span>
-          <button
-            className="quiet-danger compact"
-            type="button"
-            onClick={() => setResetConfirmOpen(true)}
-          >
-            <RotateCcw size={16} />
-            Reset meeting
-          </button>
-        </div>
-      )}
-
       {resetConfirmOpen && (
         <ConfirmDialog
           body="This clears meeting times, time votes, book votes, and finalized choices. The current book shortlist stays in place."
@@ -239,6 +225,16 @@ export function MeetingBoard({
             (leadingBooks.length ? formatLeadingLabels(leadingBooks) : "No votes yet")
           }
         />
+        {isAdmin && (
+          <button
+            className="summary-admin-action"
+            type="button"
+            onClick={() => setResetConfirmOpen(true)}
+          >
+            <RotateCcw size={16} />
+            Reset meeting
+          </button>
+        )}
       </section>
 
       <section className="mobile-vote-actions" aria-label="Voting shortcuts">
